@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
-
    @Resource
     private CacheClient cacheClient;
      @Resource
@@ -44,7 +43,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
       //  Shop shop = queryWithPassThrough(id);
        // Shop shop=cacheClient.queryWithPassThrough(RedisConstants.CACHE_SHOP_KEY,id,Shop.class,id2->getById(id2),RedisConstants.CACHE_SHOP_TTL,TimeUnit.MINUTES);
        //缓存击穿
-      //  Shop shop = queryWithMutex(id);
+     // Shop shop = queryWithMutex(id);
         //用逻辑过期来解决
        //Shop shop = queryWithLoginExpire(id);
        Shop shop=cacheClient.queryWithLoginExpire(RedisConstants.CACHE_SHOP_KEY,id,Shop.class,id2->getById(id2),RedisConstants.CACHE_SHOP_TTL,TimeUnit.MINUTES);

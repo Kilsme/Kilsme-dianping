@@ -64,8 +64,13 @@ public class CacheClient {
         String json = stringRedisTemplate.opsForValue().get(key);
         //判断存在
         if(!StrUtil.isNotBlank(json)) {
-            //不存在
-            return null;
+            R r = dbFallback.apply(id);
+            if (r == null) {
+                return null;
+            }
+            // 写入缓存（带逻辑过期时间）
+            this.setWithLogicalExpire(key, r, time, unit);
+            return r;
         }
         //命中 需要进行判断过期时间
         RedisData redisData = JSONUtil.toBean(json, RedisData.class);
