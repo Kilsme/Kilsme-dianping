@@ -1,6 +1,5 @@
 package com.hmdp.controller;
 
-
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
@@ -10,7 +9,6 @@ import com.hmdp.utils.SystemConstants;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-
 /**
  * <p>
  * 前端控制器
@@ -22,10 +20,8 @@ import javax.annotation.Resource;
 @RestController
 @RequestMapping("/shop")
 public class ShopController {
-
     @Resource
     public IShopService shopService;
-
     /**
      * 根据id查询商铺信息
      * @param id 商铺id
@@ -35,7 +31,6 @@ public class ShopController {
     public Result queryShopById(@PathVariable("id") Long id) throws InterruptedException {
         return shopService.queryById(id);
     }
-
     /**
      * 新增商铺信息
      * @param shop 商铺数据
@@ -56,7 +51,6 @@ public class ShopController {
      */
     @PutMapping
     public Result updateShop(@RequestBody Shop shop) {
-
         return shopService.update(shop);
     }
 

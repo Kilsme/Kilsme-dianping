@@ -24,7 +24,6 @@ import java.util.List;
 public class ShopTypeController {
     @Resource
     private IShopTypeService typeService;
-
     @GetMapping("list")
     public Result queryTypeList() {
         //进行查询缓存

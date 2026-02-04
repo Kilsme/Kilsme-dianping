@@ -31,7 +31,6 @@ public class BlogController {
     private IBlogService blogService;
     @Resource
     private IUserService userService;
-
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
         // 获取登录用户

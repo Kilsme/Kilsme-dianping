@@ -7,7 +7,6 @@ import com.hmdp.service.IVoucherService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-
 /**
  * <p>
  *  前端控制器
@@ -32,7 +31,6 @@ public class VoucherController {
         voucherService.save(voucher);
         return Result.ok(voucher.getId());
     }
-
     /**
      * 新增秒杀券
      * @param voucher 优惠券信息，包含秒杀信息
