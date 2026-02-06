@@ -14,6 +14,5 @@ public class RedissonConfig {
         config.useSingleServer().setAddress("redis://127.0.0.1:6379");
         //创建RedissonClient对象
         return org.redisson.Redisson.create(config);
-
     }
 }
