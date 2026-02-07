@@ -56,7 +56,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         SECKILL_SCRIPT.setLocation(new org.springframework.core.io.ClassPathResource("seckill.lua"));
         SECKILL_SCRIPT.setResultType(Long.class);
     }
-
+//创建xgroup create stream.orders g1 0 mkstream 发送消息组
     @PostConstruct//当前类初始化完成后执行
     private void init() {
         SECKILL_ORDER_EXECUTOR.submit(new VoucherOrderHandler());
@@ -68,10 +68,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     //创建一个内部类处理订单
     private class VoucherOrderHandler implements Runnable {
         String queueName = "stream.orders";
-
         @Override
         public void run() {
-
             while (true) {
                 try {
                     //获取stream消息队列中的订单信息
@@ -98,7 +96,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 }
             }
         }
-
         private void handlePendingList() {
             while (true) {
                 try {
