@@ -42,7 +42,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     @Resource
     private UserServiceImpl userService;
     @Resource
-   private IFollowService followService;
+    private IFollowService followService;
     @Override
     public Result queryBlogById(Long id) {
         //查询blog
