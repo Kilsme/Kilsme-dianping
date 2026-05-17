@@ -2,8 +2,6 @@
 local voucherId=ARGV[1]
 --用户id
 local userId=ARGV[2]
---订单id
-local orderId=ARGV[3]
 --数据id
 --库存key
 local stockKey='seckill:stock:'..voucherId
@@ -21,6 +19,5 @@ end
 redis.call('incrby',stockKey,-1)
 --保存用户id到订单中
 redis.call('sadd',orderKey,userId)
---3.返回0表示下单成功  发送消息到消息队列中
-redis.call('xadd','stream.orders','*','userId',userId,'voucherId',voucherId,'id',orderId)
+--3.返回0表示下单成功
 return 0
