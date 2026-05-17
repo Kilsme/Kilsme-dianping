@@ -14,6 +14,7 @@ import java.util.Set;
 
 @Component
 public class BlogLikeFlushTask {
+    private static final int MAX_MEMBERS_PER_BATCH = 1000;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -35,6 +36,9 @@ public class BlogLikeFlushTask {
             }
             Set<String> members = stringRedisTemplate.opsForZSet().range(RedisConstants.BLOG_LIKED_KEY + blogId, 0, -1);
             if (members != null && !members.isEmpty()) {
+                if (members.size() > MAX_MEMBERS_PER_BATCH) {
+                    members = members.stream().limit(MAX_MEMBERS_PER_BATCH).collect(java.util.stream.Collectors.toSet());
+                }
                 List<Object[]> batchArgs = new ArrayList<>();
                 for (String userId : members) {
                     batchArgs.add(new Object[]{Long.valueOf(blogId), Long.valueOf(userId)});

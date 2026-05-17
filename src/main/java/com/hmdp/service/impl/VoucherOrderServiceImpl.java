@@ -17,6 +17,7 @@ import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -36,6 +37,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     public static final String SECKILL_TOPIC = "seckill-order-topic";
     public static final String SECKILL_CREATE_TAG = "create";
     public static final String SECKILL_CLOSE_TAG = "close";
+    private static final int CLOSE_ORDER_DELAY_LEVEL = 14;
 
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
 
@@ -57,6 +59,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private MqMessageMapper mqMessageMapper;
     @Resource
     private RocketMQTemplate rocketMQTemplate;
+    @Value("${payment.callback.mock-sign:mock-sign}")
+    private String callbackMockSign;
 
     @Override
     public Result seckillVoucher(Long voucherId) {
@@ -180,7 +184,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     private boolean verifySignature(Map<String, String> payload) {
         String sign = payload.get("sign");
-        return sign == null || "mock-sign".equals(sign);
+        return sign != null && callbackMockSign.equals(sign);
     }
 
     public void consumeOrderMessage(String body) {
@@ -200,7 +204,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     public void publishOutboxMessage(MqMessage message) {
         String destination = message.getTopic() + ":" + message.getTag();
         if (SECKILL_CLOSE_TAG.equals(message.getTag())) {
-            rocketMQTemplate.syncSend(destination, MessageBuilder.withPayload(message.getBody()).build(), 3000, 14);
+            rocketMQTemplate.syncSend(destination, MessageBuilder.withPayload(message.getBody()).build(), 3000, CLOSE_ORDER_DELAY_LEVEL);
         } else {
             rocketMQTemplate.convertAndSend(destination, message.getBody());
         }
