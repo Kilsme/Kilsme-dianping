@@ -237,3 +237,15 @@ BloomFilter 会拦截不存在的 voucherId。请确认：
 
 ## 10. 更新记录
 - 2026-05-17：合并 PR #1，完成秒杀链路、点赞/评论优化、Outbox/补偿任务与 README 完善
+
+
+<img width="1608" height="1093" alt="image" src="https://github.com/user-attachments/assets/08b0eb24-3e41-4ac9-ac66-5abfec679205" />
+
+
+<img width="2038" height="8192" alt="image" src="https://github.com/user-attachments/assets/956999c9-f19e-40ab-833e-c23eb46937d5" />
+
+
+<img width="1720" height="1014" alt="image" src="https://github.com/user-attachments/assets/9336eab0-3189-4016-a98a-5fe6b7a0e719" />
+
+
+
