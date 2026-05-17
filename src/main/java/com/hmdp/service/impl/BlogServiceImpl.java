@@ -14,6 +14,7 @@ import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.service.IFollowService;
+import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,7 +33,7 @@ import java.util.stream.Stream;
  * 服务实现类
  * </p>
  *
- * @author 虎哥
+ * @author Kilsme
  * @since 2021-12-22
  */
 @Service
@@ -54,6 +55,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         queryBolgUser(blog);
         //查询blog是否被点赞
         isBoleLiked(blog);
+        applyRedisLikeCount(blog);
         return Result.ok(blog);
     }
 
@@ -68,6 +70,13 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         String key = "blog:liked:" + blog.getId();
         Double score= stringRedisTemplate.opsForZSet().score(key, userId.toString());
         blog.setIsLike(score!=null);//但是没有写入数据库中，只是在前端进行展示，当前用户是否存在redis中的set集合中，如果存在则说明当前用户已经点赞了，返回true，否则返回false
+    }
+
+    private void applyRedisLikeCount(Blog blog) {
+        Object count = stringRedisTemplate.opsForHash().get(RedisConstants.BLOG_LIKE_COUNT_KEY, blog.getId().toString());
+        if (count != null) {
+            blog.setLiked(Integer.valueOf(count.toString()));
+        }
     }
 
     private void queryBolgUser(Blog blog) {
@@ -90,6 +99,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             queryBolgUser(blog);//根据博客查询用户
             //查询blog是否被点赞
             isBoleLiked(blog);
+            applyRedisLikeCount(blog);
         });
         return Result.ok(records);
     }
@@ -98,23 +108,19 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     public Result likeBlog(Long id) {
         //判断当前登录用户是否点赞
         Long userId = UserHolder.getUser().getId();
-        //如果没有点赞，则点赞   ->保存用户到redis中-> 更新数据库+1
+        //如果没有点赞，则点赞   ->仅更新redis，异步刷库
         String key = "blog:liked:" + id;
         Double score=stringRedisTemplate.opsForZSet().score(key, userId.toString());
         if (score==null) {
-            //更新数据库
-            boolean success = update().setSql("liked=liked+1").eq("id", id).update();
-           if(success){//使用ZSet集合来存储点赞的用户，按照时间戳进行排序，最新点赞的用户在前面
-               stringRedisTemplate.opsForZSet().add(key, userId.toString(),System.currentTimeMillis());
-           }
+            stringRedisTemplate.opsForZSet().add(key, userId.toString(),System.currentTimeMillis());
+            stringRedisTemplate.opsForHash().increment(RedisConstants.BLOG_LIKE_COUNT_KEY, id.toString(), 1);
+            stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKE_DIRTY_KEY, id.toString());
             return Result.ok();
         }else {
-            //如果已经点赞，则取消点赞 -> 从redis中删除用户-> 更新数据库-1
-            //更新数据库
-            boolean success = update().setSql("liked=liked-1").eq("id", id).update();
-            if(success){
-                stringRedisTemplate.opsForZSet().remove(key, userId.toString());
-            }
+            //如果已经点赞，则取消点赞 -> 从redis中删除用户-> redis计数-1
+            stringRedisTemplate.opsForZSet().remove(key, userId.toString());
+            stringRedisTemplate.opsForHash().increment(RedisConstants.BLOG_LIKE_COUNT_KEY, id.toString(), -1);
+            stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKE_DIRTY_KEY, id.toString());
             return Result.ok();
         }
     }
@@ -196,6 +202,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             queryBolgUser(blog);
             //查询blog是否被点赞
             isBoleLiked(blog);
+            applyRedisLikeCount(blog);
         });
         ScrollResult scrollResult = new ScrollResult();
         scrollResult.setList(blogs);
