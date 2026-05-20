@@ -8,10 +8,12 @@ import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherService;
 import com.hmdp.utils.RedisConstants;
+import com.hmdp.utils.RedisBloomFilterUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.List;
 
@@ -20,7 +22,7 @@ import java.util.List;
  *  服务实现类
  * </p>
  *
- * @author 虎哥
+ * @author Kilsme
  * @since 2021-12-22
  */
 @Service
@@ -30,6 +32,8 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
     private ISeckillVoucherService seckillVoucherService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private RedisBloomFilterUtils redisBloomFilterUtils;
 
     @Override
     public Result queryVoucherOfShop(Long shopId) {
@@ -53,7 +57,18 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         seckillVoucherService.save(seckillVoucher);
         //保存优惠劵的消息到redis中
         stringRedisTemplate.opsForValue().set(RedisConstants.SECKILL_STOCK_KEY +voucher.getId(), voucher.getStock().toString());
+        redisBloomFilterUtils.add(RedisConstants.SECKILL_BLOOM_KEY, voucher.getId().toString());
     }
 
+    @PostConstruct
+    public void initVoucherBloom() {
+        try {
+            List<SeckillVoucher> vouchers = seckillVoucherService.list();
+            for (SeckillVoucher voucher : vouchers) {
+                redisBloomFilterUtils.add(RedisConstants.SECKILL_BLOOM_KEY, voucher.getVoucherId().toString());
+            }
+        } catch (Exception ignored) {
+        }
+    }
 
 }
