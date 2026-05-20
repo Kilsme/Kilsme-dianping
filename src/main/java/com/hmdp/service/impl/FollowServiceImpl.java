@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  *  服务实现类
  * </p>
  *
- * @author 虎哥
+ * @author Kilsme
  * @since 2021-12-22
  */
 @Service
@@ -68,6 +68,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .eq("follow_user_id", followUserId).count();
         //判断count是否大于0
         return Result.ok(count>0);
+
     }
 
     @Override
@@ -87,5 +88,6 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         List<UserDTO> userList = userService.listByIds(ids).stream()
                 .map(user -> BeanUtil.copyProperties(user,UserDTO.class)).collect(Collectors.toList());
         return Result.ok(userList);
+
     }
 }

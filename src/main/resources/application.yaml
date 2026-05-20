@@ -19,8 +19,30 @@ spring:
         time-between-eviction-runs: 10s
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080   # Sentinel 控制台地址
+      eager: true                    # 立即初始化Sentinel
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
 logging:
   level:
     com.hmdp: debug
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: hmdp-producer-group
+
+xxl:
+  job:
+    admin:
+      addresses: http://127.0.0.1:8080/xxl-job-admin
+    executor:
+      appname: hmdp-like-executor
+      address:
+      ip:
+      port: 9999
+      logpath: logs/xxl-job
+      logretentiondays: 30
+    accessToken:

@@ -14,6 +14,7 @@ import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.service.IFollowService;
+import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,7 +33,7 @@ import java.util.stream.Stream;
  * 服务实现类
  * </p>
  *
- * @author 虎哥
+ * @author Kilsme
  * @since 2021-12-22
  */
 @Service
@@ -54,6 +55,12 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         queryBolgUser(blog);
         //查询blog是否被点赞
         isBoleLiked(blog);
+        // 从 Redis 读取最新点赞数（Write-Behind 模式下 MySQL 数据可能滞后）
+        String countKey = RedisConstants.BLOG_LIKE_COUNT_KEY + id;
+        String likedCount = stringRedisTemplate.opsForValue().get(countKey);
+        if (likedCount != null) {
+            blog.setLiked(Integer.valueOf(likedCount));
+        }
         return Result.ok(blog);
     }
 
@@ -96,27 +103,22 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Override
     public Result likeBlog(Long id) {
-        //判断当前登录用户是否点赞
         Long userId = UserHolder.getUser().getId();
-        //如果没有点赞，则点赞   ->保存用户到redis中-> 更新数据库+1
-        String key = "blog:liked:" + id;
-        Double score=stringRedisTemplate.opsForZSet().score(key, userId.toString());
-        if (score==null) {
-            //更新数据库
-            boolean success = update().setSql("liked=liked+1").eq("id", id).update();
-           if(success){//使用ZSet集合来存储点赞的用户，按照时间戳进行排序，最新点赞的用户在前面
-               stringRedisTemplate.opsForZSet().add(key, userId.toString(),System.currentTimeMillis());
-           }
-            return Result.ok();
-        }else {
-            //如果已经点赞，则取消点赞 -> 从redis中删除用户-> 更新数据库-1
-            //更新数据库
-            boolean success = update().setSql("liked=liked-1").eq("id", id).update();
-            if(success){
-                stringRedisTemplate.opsForZSet().remove(key, userId.toString());
-            }
-            return Result.ok();
+        String key = RedisConstants.BLOG_LIKED_KEY + id;
+        String countKey = RedisConstants.BLOG_LIKE_COUNT_KEY + id;
+        Double score = stringRedisTemplate.opsForZSet().score(key, userId.toString());
+        if (score == null) {
+            // 点赞：Redis 计数+1，ZSet 记录点赞用户，Set 标记为待同步脏数据
+            stringRedisTemplate.opsForValue().increment(countKey, 1);
+            stringRedisTemplate.opsForZSet().add(key, userId.toString(), System.currentTimeMillis());
+            stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKE_CHANGED_KEY, id.toString());
+        } else {
+            // 取消点赞：Redis 计数-1，ZSet 移除点赞用户，Set 标记为待同步脏数据
+            stringRedisTemplate.opsForValue().decrement(countKey, 1);
+            stringRedisTemplate.opsForZSet().remove(key, userId.toString());
+            stringRedisTemplate.opsForSet().add(RedisConstants.BLOG_LIKE_CHANGED_KEY, id.toString());
         }
+        return Result.ok();
     }
 
     @Override
@@ -167,7 +169,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         Long userId = UserHolder.getUser().getId();
         String key="feed:"+userId;
         //查询收件箱 ZREVRANGEBYSCORE key Max Min limit offset count
-        Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet().
+        Set<ZSetOperations.TypedTuple   <String>> typedTuples = stringRedisTemplate.opsForZSet().
                 reverseRangeByScoreWithScores(key, 0, max, offset, 2);
         //没有数据
         if(typedTuples==null||typedTuples.isEmpty()){
@@ -204,3 +206,5 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok(scrollResult);
     }
 }
+
+

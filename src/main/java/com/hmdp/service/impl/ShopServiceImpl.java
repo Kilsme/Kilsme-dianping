@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * 服务实现类
  * </p>
  *
- * @author 虎哥
+ * @author Kilsme
  * @since 2021-12-22
  */
 @Service
@@ -48,7 +48,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     private CacheClient cacheClient;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-
     @Override
     public Result queryById(Long id) throws InterruptedException {
         //缓存穿透
@@ -62,6 +61,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         if (shop == null) {
             return Result.fail("商户不存在");
         }
+        stringRedisTemplate.opsForValue().set(RedisConstants.CACHE_SHOP_KEY+id,JSONUtil.toJsonStr(shop),30L,TimeUnit.MINUTES);
         return Result.ok(shop);
     }
 
@@ -265,7 +265,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
         //返回结果
         return Result.ok(shops);
-
 
     }
 }
