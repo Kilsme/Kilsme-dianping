@@ -1,7 +1,6 @@
 package com.hmdp.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -10,14 +9,13 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * <p>
  * 
  * </p>
  *
- * @author Kilsme
+ * @author 虎哥
  * @since 2021-12-22
  */
 @Data
@@ -79,13 +77,5 @@ public class BlogComments implements Serializable {
      */
     private LocalDateTime updateTime;
 
-    @TableField(exist = false)
-    private String userName;
-
-    @TableField(exist = false)
-    private String userIcon;
-
-    @TableField(exist = false)
-    private List<BlogComments> replies;
 
 }
