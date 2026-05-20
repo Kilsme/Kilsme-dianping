@@ -15,7 +15,6 @@ import java.util.Map;
 
 @Component
 public class OrderReconciliationTask {
-    private static final int UNPAID_ORDER_TIMEOUT_MINUTES = 5;
 
     @Resource
     private VoucherOrderMapper voucherOrderMapper;
@@ -26,7 +25,7 @@ public class OrderReconciliationTask {
     public void reconcileUnpaidOrder() {
         List<VoucherOrder> orders = voucherOrderMapper.selectList(new LambdaQueryWrapper<VoucherOrder>()
                 .eq(VoucherOrder::getStatus, 0)
-                .lt(VoucherOrder::getCreateTime, LocalDateTime.now().minusMinutes(UNPAID_ORDER_TIMEOUT_MINUTES))
+                .lt(VoucherOrder::getCreateTime, LocalDateTime.now().minusMinutes(5))
                 .last("limit 100"));
         for (VoucherOrder order : orders) {
             if (mockQueryPayment(order.getId())) {
@@ -40,7 +39,6 @@ public class OrderReconciliationTask {
     }
 
     private boolean mockQueryPayment(Long orderId) {
-        // TODO replace with real payment gateway query API.
         return orderId % 2 == 0;
     }
 }

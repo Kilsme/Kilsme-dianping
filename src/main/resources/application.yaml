@@ -31,8 +31,3 @@ rocketmq:
 sentinel:
   transport:
     dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8858}
-  seckill:
-    qps: ${SENTINEL_SECKILL_QPS:200}
-payment:
-  callback:
-    mock-sign: ${PAYMENT_CALLBACK_SIGN:mock-sign}

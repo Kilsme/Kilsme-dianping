@@ -1,5 +1,6 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,12 +85,8 @@ public class BlogCommentsServiceImpl extends ServiceImpl<BlogCommentsMapper, Blo
         Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange(key, 0, 99);
         if (ids != null && !ids.isEmpty()) {
             List<Long> commentIds = ids.stream().map(Long::valueOf).collect(Collectors.toList());
-            Map<Long, Integer> orderMap = new HashMap<>(commentIds.size());
-            for (int i = 0; i < commentIds.size(); i++) {
-                orderMap.put(commentIds.get(i), i);
-            }
-            List<BlogComments> comments = query().in("id", commentIds).list();
-            comments.sort(Comparator.comparingInt(c -> orderMap.getOrDefault(c.getId(), Integer.MAX_VALUE)));
+            String idStr = StrUtil.join(",", commentIds);
+            List<BlogComments> comments = query().in("id", commentIds).last("order by field(id," + idStr + ")").list();
             comments.forEach(this::fillCommentUser);
             return Result.ok(comments);
         }

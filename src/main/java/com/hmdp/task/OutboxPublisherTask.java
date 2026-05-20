@@ -15,7 +15,6 @@ import java.util.List;
 @Slf4j
 @Component
 public class OutboxPublisherTask {
-    private static final int MAX_RETRY_COUNT = 10;
 
     @Resource
     private MqMessageMapper mqMessageMapper;
@@ -33,13 +32,8 @@ public class OutboxPublisherTask {
                 voucherOrderService.publishOutboxMessage(message);
             } catch (Exception e) {
                 log.error("publish outbox message failed, id={}", message.getId(), e);
-                int retryCount = (message.getRetryCount() == null ? 0 : message.getRetryCount()) + 1;
-                message.setRetryCount(retryCount);
-                if (retryCount > MAX_RETRY_COUNT) {
-                    message.setStatus(2);
-                } else {
-                    message.setNextRetryTime(LocalDateTime.now().plusSeconds(30));
-                }
+                message.setRetryCount((message.getRetryCount() == null ? 0 : message.getRetryCount()) + 1);
+                message.setNextRetryTime(LocalDateTime.now().plusSeconds(30));
                 mqMessageMapper.updateById(message);
             }
         }

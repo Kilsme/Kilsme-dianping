@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class RedisBloomFilterUtils {
 
-    // 约 16,777,216 bit（~2MB），适用于几十万到百万级 id 的轻量级布隆过滤场景
     private static final int DEFAULT_SIZE = 1 << 24;
 
     @Resource
